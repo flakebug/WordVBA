@@ -3,6 +3,8 @@ Option Explicit
 
 Sub GetFirstRowAsFilename()
 Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥¨¶°2"
+    On Error Resume Next
+    
     Dim result As VbMsgBoxResult
     result = MsgBox("¿ù»~ªºµ{¦¡¸ô®|±N¾É­PÀÉ®×¦WºÙ·lÃa¥BµLªk¦^´_¡A½Ð½T»{§Aªºµ{¦¡ÀÉ®×¦ì¸m¤w¥¿½T¦s©ñ©ó·s³Æ¥÷ªº¤u§@¸ê®Æ§¨¤¤", vbExclamation + vbOKCancel)
     If result = vbCancel Then
@@ -36,7 +38,7 @@ Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥
     Dim RawDocTitle As String
     Dim TrimmedDocTitle As String
     
-
+    Open CurrentPath & "\log.txt" For Append As #1
     Do While FileName <> ""
         OriginalFullname = CurrentPath & "\" & FileName
         If OriginalFullname <> VBAFullname Then
@@ -47,17 +49,24 @@ Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥
             TrimmedDocTitle = Replace(Replace(Replace(RawDocTitle, "¡@¡@¡@", "-"), "¡@", ""), vbCr, "")
             wddoc.Close
             TargetFullname = CurrentPath & "\" & TrimmedDocTitle & ".doc"
-            Name OriginalFullname As TargetFullname
+            If Trim(TrimmedDocTitle) <> "" Then
+                Name OriginalFullname As TargetFullname
+            Else
+                Err.Raise 9999
+            End If
+            If Err Then
+                Print #1, Now & ", §ó¦W¥¢±Ñ, " & FileName
+                Err.Clear
+            End If
         End If
         
         FileName = Dir
     Loop
-    
+    Close #1
 
     Application.ScreenUpdating = True
     Application.Visible = True
     
     MsgBox "§¹¦¨", vbInformation
+    
 End Sub
-
-
