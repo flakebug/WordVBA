@@ -26,8 +26,8 @@ Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥
     Dim CurrentPath As String
     CurrentPath = ActiveDocument.Path
     
-    Dim FileName As String
-    FileName = Dir(CurrentPath & "\*.doc", vbDirectory)
+    Dim filename As String
+    filename = Dir(CurrentPath & "\*.doc", vbDirectory)
     Dim wddoc As Document
     
     Application.Visible = False
@@ -39,14 +39,14 @@ Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥
     Dim TrimmedDocTitle As String
     
     Open CurrentPath & "\log.txt" For Append As #1
-    Do While FileName <> ""
-        OriginalFullname = CurrentPath & "\" & FileName
+    Do While filename <> ""
+        OriginalFullname = CurrentPath & "\" & filename
         If OriginalFullname <> VBAFullname Then
             Set wddoc = Application.Documents.Open(OriginalFullname)
             Selection.HomeKey Unit:=wdStory
             Selection.MoveDown Unit:=wdLine, Count:=1, Extend:=wdExtend
             RawDocTitle = Selection
-            TrimmedDocTitle = Replace(Replace(Replace(RawDocTitle, "¡@¡@¡@", "-"), "¡@", ""), vbCr, "")
+            TrimmedDocTitle = RemoveSpecial(RawDocTitle)
             wddoc.Close
             TargetFullname = CurrentPath & "\" & TrimmedDocTitle & ".doc"
             If Trim(TrimmedDocTitle) <> "" Then
@@ -54,13 +54,17 @@ Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥
             Else
                 Err.Raise 9999
             End If
+          
             If Err Then
-                Print #1, Now & ", §ó¦W¥¢±Ñ, " & FileName
+                Print #1, Now & ", µo²{¯S®í¦r¤¸¤w¹Á¸Õ§ó¥¿, " & filename
+                If Err.Number <> 9999 Then
+                    TryToRename filename, TrimmedDocTitle
+                End If
                 Err.Clear
             End If
         End If
         
-        FileName = Dir
+        filename = Dir
     Loop
     Close #1
 
@@ -70,3 +74,51 @@ Attribute GetFirstRowAsFilename.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.¥
     MsgBox "§¹¦¨", vbInformation
     
 End Sub
+
+Sub TryToRename(filename As String, TrimmedDocTitle As String)
+    On Error Resume Next
+    Dim OriginalFullname As String
+    Dim TargetFullname As String
+    Dim LengthOfTitle As Integer
+    Dim CurrentPath As String
+    CurrentPath = ActiveDocument.Path
+    
+    OriginalFullname = CurrentPath & "\" & filename
+rename:
+    LengthOfTitle = Len(TrimmedDocTitle)
+    If LengthOfTitle = 0 Then
+        Exit Sub
+    End If
+    TrimmedDocTitle = Left(TrimmedDocTitle, LengthOfTitle - 1)
+    TargetFullname = CurrentPath & "\" & TrimmedDocTitle & ".doc"
+    Name OriginalFullname As TargetFullname
+    If Err Then
+        GoTo rename
+    End If
+    Err.Clear
+    
+End Sub
+
+Function RemoveSpecial(str As String) As String
+    'updatebyExtendoffice 20160303
+    Dim xChars As String
+    Dim I As Long
+    xChars = "¡@"
+    For I = 0 To 47
+        xChars = xChars & Chr(I)
+    Next
+    For I = 58 To 64
+        xChars = xChars & Chr(I)
+    Next
+    For I = 91 To 96
+        xChars = xChars & Chr(I)
+    Next
+    For I = 123 To 127
+        xChars = xChars & Chr(I)
+    Next
+    
+    For I = 1 To Len(xChars)
+        str = Replace$(str, Mid$(xChars, I, 1), "")
+    Next
+    RemoveSpecial = str
+End Function
